@@ -67,6 +67,9 @@ typedef enum {
     AUDIO_SOURCE_CAMCORDER           = 5,
     AUDIO_SOURCE_VOICE_RECOGNITION   = 6,
     AUDIO_SOURCE_VOICE_COMMUNICATION = 7,
+#ifdef ALLWINNER
+    AUDIO_SOURCE_AF                  = 8,
+#endif
 #ifdef QCOM_FM_ENABLED
     AUDIO_SOURCE_FM_RX               = 8,
     AUDIO_SOURCE_FM_RX_A2DP          = 9,
@@ -416,6 +419,9 @@ typedef enum {
     AUDIO_DEVICE_IN_AUX_DIGITAL           = 0x200000,
     AUDIO_DEVICE_IN_VOICE_CALL            = 0x400000,
     AUDIO_DEVICE_IN_BACK_MIC              = 0x800000,
+#ifdef ALLWINNER
+    AUDIO_DEVICE_IN_AF                    = 0x1000000,
+#endif
     AUDIO_DEVICE_IN_DEFAULT               = 0x80000000,
 #endif
 
@@ -427,6 +433,9 @@ typedef enum {
                                AUDIO_DEVICE_IN_AUX_DIGITAL |
                                AUDIO_DEVICE_IN_VOICE_CALL |
                                AUDIO_DEVICE_IN_BACK_MIC |
+#ifdef ALLWINNER
+			       AUDIO_DEVICE_IN_AF |
+#endif
 #ifdef QCOM_FM_ENABLED
                                AUDIO_DEVICE_IN_FM_RX |
                                AUDIO_DEVICE_IN_FM_RX_A2DP |
