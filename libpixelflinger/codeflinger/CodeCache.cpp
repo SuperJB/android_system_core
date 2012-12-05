@@ -22,9 +22,11 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-#include <cutils/log.h>
 #include <cutils/ashmem.h>
 #include <cutils/atomic.h>
+#define LOG_TAG "CodeCache"
+#include <cutils/log.h>
+
 
 #include "codeflinger/CodeCache.h"
 
@@ -39,6 +41,12 @@ namespace android {
 #include <errno.h>
 #endif
 
+#if defined(__mips__)
+#include <asm/cachectl.h>
+#include <errno.h>
+#endif
+
+// ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 // A dlmalloc mspace is used to manage the code cache over a mmaped region.
@@ -57,12 +65,13 @@ static void heap_error(const char* msg, const char* function, void* p);
 #define USAGE_ERROR_ACTION(m,p) \
     heap_error("ARGUMENT IS INVALID HEAP ADDRESS", __FUNCTION__, p)
 
-
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #pragma GCC diagnostic ignored "-Wempty-body"
 #include "../../../../bionic/libc/upstream-dlmalloc/malloc.c"
 #pragma GCC diagnostic warning "-Wstrict-aliasing"
 #pragma GCC diagnostic warning "-Wempty-body"
+
+#include "../../../../bionic/libc/upstream-dlmalloc/malloc.c"
 
 static void heap_error(const char* msg, const char* function, void* p) {
     ALOG(LOG_FATAL, LOG_TAG, "@@@ ABORTING: CODE FLINGER: %s IN %s addr=%p",
@@ -200,12 +209,12 @@ int CodeCache::cache(  const AssemblyKeyBase& keyBase,
         mCacheInUse += assemblySize;
         mWhen++;
         // synchronize caches...
-#if defined(__arm__)
+#if defined(__arm__) || defined(__mips__)
         const long base = long(assembly->base());
         const long curr = base + long(assembly->size());
         err = cacheflush(base, curr, 0);
-        ALOGE_IF(err, "__ARM_NR_cacheflush error %s\n",
-                strerror(errno));
+        ALOGE_IF(err, "cacheflush error %s\n",
+                 strerror(errno));
 #endif
     }
 

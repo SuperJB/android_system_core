@@ -62,6 +62,7 @@
 #define AID_DRMRPC        1026  /* group for drm rpc */
 #define AID_NFC           1027  /* nfc subsystem */
 #define AID_SDCARD_R      1028  /* external storage read access */
+#define AID_CLAT          1029  /* clat part of nat464 */
 
 #define AID_SHELL         2000  /* adb and debug shell user */
 #define AID_CACHE         2001  /* cache access */
@@ -78,6 +79,7 @@
 #define AID_NET_BW_ACCT   3007  /* change bandwidth statistics accounting */
 #define AID_QCOM_ONCRPC   3008  /* can read/write /dev/oncrpc files */
 #define AID_QCOM_DIAG     3009  /* can read/write /dev/diag */
+#define AID_NET_BT_STACK  3010  /* bluetooth: access config files */
 
 #if defined(MOTOROLA_UIDS)
 #define AID_MOT_OSH       5000  /* OSH */
@@ -104,6 +106,9 @@
 #define AID_ISOLATED_END   99999 /* end of uids for fully isolated sandboxed processes */
 
 #define AID_USER        100000  /* offset for uid ranges for each user */
+
+#define AID_SHARED_GID_START 50000 /* start of gids for apps in each user to share */
+#define AID_SHARED_GID_END   59999 /* start of gids for apps in each user to share */
 
 #if !defined(EXCLUDE_FS_CONFIG_STRUCTURES)
 struct android_id_info {
@@ -137,6 +142,7 @@ static const struct android_id_info android_ids[] = {
     { "diag",      AID_DIAG, },
     { "net_bt_admin", AID_NET_BT_ADMIN, },
     { "net_bt",    AID_NET_BT, },
+    { "net_bt_stack",    AID_NET_BT_STACK, },
     { "sdcard_r",  AID_SDCARD_R, },
     { "sdcard_rw", AID_SDCARD_RW, },
     { "media_rw",  AID_MEDIA_RW, },
@@ -169,6 +175,7 @@ static const struct android_id_info android_ids[] = {
 #endif
     { "misc",      AID_MISC, },
     { "nobody",    AID_NOBODY, },
+    { "clat",      AID_CLAT, },
 };
 
 #define android_id_count \

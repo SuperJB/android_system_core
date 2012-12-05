@@ -197,6 +197,16 @@ enum {
 #endif
 #endif
 
+    /**
+     * Configure the number of video buffers used for recording. The intended
+     * video buffer count for recording is passed as arg1, which must be
+     * greater than 0. This command must be sent before recording is started.
+     * This command returns INVALID_OPERATION error if it is sent after video
+     * recording is started, or the command is not supported at all. This
+     * command also returns a BAD_VALUE error if the intended video buffer
+     * count is non-positive or too big to be realized.
+     */
+    CAMERA_CMD_SET_VIDEO_BUFFER_COUNT = 10,
 };
 
 /** camera fatal errors */

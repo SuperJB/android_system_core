@@ -37,10 +37,8 @@
 #include <sys/system_properties.h>
 #include <fs_mgr.h>
 
-#ifdef HAVE_SELINUX
 #include <selinux/selinux.h>
 #include <selinux/label.h>
-#endif
 
 #include "init.h"
 #include "keywords.h"
@@ -387,7 +385,7 @@ int do_mkdir(int nargs, char **args)
         mode = strtoul(args[2], 0, 8);
     }
 
-    ret = mkdir(args[1], mode);
+    ret = make_dir(args[1], mode);
     /* chmod in case the directory already exists */
     if (ret == -1 && errno == EEXIST) {
         ret = _chmod(args[1], mode);
@@ -407,6 +405,14 @@ int do_mkdir(int nargs, char **args)
         if (_chown(args[1], uid, gid) < 0) {
             return -errno;
         }
+
+        /* chown may have cleared S_ISUID and S_ISGID, chmod again */
+        if (mode & (S_ISUID | S_ISGID)) {
+            ret = _chmod(args[1], mode);
+            if (ret == -1) {
+                return -errno;
+            }
+        }
     }
 
     return 0;
@@ -424,6 +430,12 @@ static struct {
     { "ro",         MS_RDONLY },
     { "rw",         0 },
     { "remount",    MS_REMOUNT },
+    { "bind",       MS_BIND },
+    { "rec",        MS_REC },
+    { "unbindable", MS_UNBINDABLE },
+    { "private",    MS_PRIVATE },
+    { "slave",      MS_SLAVE },
+    { "shared",     MS_SHARED },
     { "defaults",   0 },
     { 0,            0 },
 };
@@ -586,24 +598,20 @@ int do_mount_all(int nargs, char **args)
 }
 
 int do_setcon(int nargs, char **args) {
-#ifdef HAVE_SELINUX
     if (is_selinux_enabled() <= 0)
         return 0;
     if (setcon(args[1]) < 0) {
         return -errno;
     }
-#endif
     return 0;
 }
 
 int do_setenforce(int nargs, char **args) {
-#ifdef HAVE_SELINUX
     if (is_selinux_enabled() <= 0)
         return 0;
     if (security_setenforce(atoi(args[1])) < 0) {
         return -errno;
     }
-#endif
     return 0;
 }
 
@@ -833,31 +841,16 @@ int do_chmod(int nargs, char **args) {
 }
 
 int do_restorecon(int nargs, char **args) {
-#ifdef HAVE_SELINUX
-    char *secontext = NULL;
-    struct stat sb;
     int i;
 
-    if (is_selinux_enabled() <= 0 || !sehandle)
-        return 0;
-
     for (i = 1; i < nargs; i++) {
-        if (lstat(args[i], &sb) < 0)
+        if (restorecon(args[i]) < 0)
             return -errno;
-        if (selabel_lookup(sehandle, &secontext, args[i], sb.st_mode) < 0)
-            return -errno;
-        if (lsetfilecon(args[i], secontext) < 0) {
-            freecon(secontext);
-            return -errno;
-        }
-        freecon(secontext);
     }
-#endif
     return 0;
 }
 
 int do_setsebool(int nargs, char **args) {
-#ifdef HAVE_SELINUX
     SELboolean *b = alloca(nargs * sizeof(SELboolean));
     char *v;
     int i;
@@ -886,7 +879,7 @@ int do_setsebool(int nargs, char **args) {
 
     if (security_set_boolean_list(nargs - 1, b, 0) < 0)
         return -errno;
-#endif
+
     return 0;
 }
 
@@ -910,8 +903,10 @@ int do_wait(int nargs, char **args)
 {
     if (nargs == 2) {
         return wait_for_file(args[1], COMMAND_RETRY_TIMEOUT);
-    }
-    return -1;
+    } else if (nargs == 3) {
+        return wait_for_file(args[1], atoi(args[2]));
+    } else
+        return -1;
 }
 
 #ifdef ALLWINNER
