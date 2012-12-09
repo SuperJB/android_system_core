@@ -68,10 +68,6 @@ static void heap_error(const char* msg, const char* function, void* p);
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #pragma GCC diagnostic ignored "-Wempty-body"
 #include "../../../../bionic/libc/upstream-dlmalloc/malloc.c"
-#pragma GCC diagnostic warning "-Wstrict-aliasing"
-#pragma GCC diagnostic warning "-Wempty-body"
-
-#include "../../../../bionic/libc/upstream-dlmalloc/malloc.c"
 
 static void heap_error(const char* msg, const char* function, void* p) {
     ALOG(LOG_FATAL, LOG_TAG, "@@@ ABORTING: CODE FLINGER: %s IN %s addr=%p",
