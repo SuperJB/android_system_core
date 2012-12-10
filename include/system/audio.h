@@ -360,17 +360,14 @@ typedef enum {
     AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET         = 0x1000,
     AUDIO_DEVICE_OUT_USB_ACCESSORY             = 0x2000,
     AUDIO_DEVICE_OUT_USB_DEVICE                = 0x4000,
+    AUDIO_DEVICE_OUT_REMOTE_SUBMIX             = 0x8000,
 #ifdef QCOM_FM_ENABLED
-    AUDIO_DEVICE_OUT_FM                        = 0x8000,
-    AUDIO_DEVICE_OUT_FM_TX                     = 0x10000,
+    AUDIO_DEVICE_OUT_FM                        = 0x10000,
+    AUDIO_DEVICE_OUT_FM_TX                     = 0x20000,
 #endif
 #ifdef QCOM_HARDWARE
     AUDIO_DEVICE_OUT_PROXY                     = 0x80000,
-    AUDIO_DEVICE_OUT_DEFAULT                   = AUDIO_DEVICE_OUT_SPEAKER,
-#else
-    AUDIO_DEVICE_OUT_DEFAULT                   = 0x8000,
 #endif
-    AUDIO_DEVICE_OUT_REMOTE_SUBMIX             = 0x8000,
     AUDIO_DEVICE_OUT_DEFAULT                   = AUDIO_DEVICE_BIT_DEFAULT,
     AUDIO_DEVICE_OUT_ALL      = (AUDIO_DEVICE_OUT_EARPIECE |
                                  AUDIO_DEVICE_OUT_SPEAKER |
