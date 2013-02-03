@@ -25,6 +25,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
+#include <stdint.h>
 
 #include "sysdeps.h"
 #include "adb.h"
@@ -46,6 +47,7 @@ ADB_MUTEX_DEFINE( D_lock );
 #endif
 
 int HOST = 0;
+int gListenAll = 0;
 
 static int auth_enabled = 0;
 
@@ -701,7 +703,13 @@ int local_name_to_fd(const char *name)
     if(!strncmp("tcp:", name, 4)){
         int  ret;
         port = atoi(name + 4);
-        ret = socket_loopback_server(port, SOCK_STREAM);
+
+        if (gListenAll > 0) {
+            ret = socket_inaddr_any_server(port, SOCK_STREAM);
+        } else {
+            ret = socket_loopback_server(port, SOCK_STREAM);
+        }
+
         return ret;
     }
 #ifndef HAVE_WIN32_IPC  /* no Unix-domain sockets on Win32 */
@@ -984,6 +992,7 @@ int launch_server(int server_port)
     /* message since the pipe handles must be inheritable, we use a     */
     /* security attribute                                               */
     HANDLE                pipe_read, pipe_write;
+    HANDLE                stdout_handle, stderr_handle;
     SECURITY_ATTRIBUTES   sa;
     STARTUPINFO           startup;
     PROCESS_INFORMATION   pinfo;
@@ -1002,6 +1011,26 @@ int launch_server(int server_port)
     }
 
     SetHandleInformation( pipe_read, HANDLE_FLAG_INHERIT, 0 );
+
+    /* Some programs want to launch an adb command and collect its output by
+     * calling CreateProcess with inheritable stdout/stderr handles, then
+     * using read() to get its output. When this happens, the stdout/stderr
+     * handles passed to the adb client process will also be inheritable.
+     * When starting the adb server here, care must be taken to reset them
+     * to non-inheritable.
+     * Otherwise, something bad happens: even if the adb command completes,
+     * the calling process is stuck while read()-ing from the stdout/stderr
+     * descriptors, because they're connected to corresponding handles in the
+     * adb server process (even if the latter never uses/writes to them).
+     */
+    stdout_handle = GetStdHandle( STD_OUTPUT_HANDLE );
+    stderr_handle = GetStdHandle( STD_ERROR_HANDLE );
+    if (stdout_handle != INVALID_HANDLE_VALUE) {
+        SetHandleInformation( stdout_handle, HANDLE_FLAG_INHERIT, 0 );
+    }
+    if (stderr_handle != INVALID_HANDLE_VALUE) {
+        SetHandleInformation( stderr_handle, HANDLE_FLAG_INHERIT, 0 );
+    }
 
     ZeroMemory( &startup, sizeof(startup) );
     startup.cb = sizeof(startup);
@@ -1079,8 +1108,10 @@ int launch_server(int server_port)
         dup2(fd[1], STDERR_FILENO);
         adb_close(fd[1]);
 
+        char str_port[30];
+        snprintf(str_port, sizeof(str_port), "%d",  server_port);
         // child process
-        int result = execl(path, "adb", "fork-server", "server", NULL);
+        int result = execl(path, "adb", "-P", str_port, "fork-server", "server", NULL);
         // this should not return
         fprintf(stderr, "OOPS! execl returned %d, errno: %d\n", result, errno);
     } else  {
